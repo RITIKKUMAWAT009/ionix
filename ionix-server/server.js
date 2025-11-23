@@ -4,20 +4,45 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware
+// -------------------------------
+// CONFIG
+// -------------------------------
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
+const EC2_IP = process.env.EC2_IP || "localhost";
+
+const BASE_URL = `http://${EC2_IP}:${PORT}`;
+const WS_URL = `ws://${EC2_IP}:${PORT}/ws`;
+
+// -------------------------------
+// LOGGER
+// -------------------------------
+const log = (...args) => {
+  console.log(`[${new Date().toISOString()}]`, ...args);
+};
+
+// -------------------------------
+// MIDDLEWARE
+// -------------------------------
 app.use(express.json());
 app.use(cors());
 
-// Routes
+// -------------------------------
+// ROUTES
+// -------------------------------
 const deviceRoutes = require("./controllers/device.controller");
 app.use("/device", deviceRoutes);
 
-// Start Express Server
-const server = app.listen(PORT, () => {
-    console.log(`REST API running on http://localhost:${PORT}`);
+// -------------------------------
+// START EXPRESS SERVER
+// -------------------------------
+const server = app.listen(PORT, HOST, () => {
+  log(`🚀 REST API running at: ${BASE_URL}`);
+  log(`🔌 WebSocket running at: ${WS_URL}`);
 });
 
-// Start WebSocket server
-require("./websocket")(server);
+// -------------------------------
+// START WEBSOCKET SERVER
+// -------------------------------
+require("./websocket")(server, log);
