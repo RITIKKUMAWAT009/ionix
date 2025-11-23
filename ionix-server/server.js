@@ -52,9 +52,13 @@ if (!MONGO_URI) {
 const deviceRoutes = require("./controllers/device.controller");
 const authRoutes = require("./controllers/auth.controller");
 
+
 app.use("/device", deviceRoutes);
 app.use("/auth", authRoutes);
 
+app.get("/", (req, res) => {
+    res.send("Ionix Server is running 🚀");
+});
 app.get('/health', (req, res) => {
   try {
     const wsService = req.app.get('wsService');
