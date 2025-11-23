@@ -11,6 +11,7 @@ module.exports = {
         deviceSocket = null;
     },
 
+
     isDeviceConnected: () => {
         return deviceSocket !== null;
     },
