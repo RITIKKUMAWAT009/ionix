@@ -93,10 +93,10 @@ class _HomeContent extends GetView<HomeController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           children: [
             Text('My Home'),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Icon(Icons.keyboard_arrow_down_rounded, size: 20),
           ],
         ),
@@ -105,9 +105,10 @@ class _HomeContent extends GetView<HomeController> {
             icon: const Icon(Icons.refresh_rounded),
             onPressed: controller.refreshDevices,
           ),
-          IconButton(
-            icon: const Icon(Icons.add_circle, size: 28),
-            onPressed: controller.addDevice,
+          const IconButton(
+            icon: Icon(Icons.add_circle, size: 28),
+            onPressed: null
+            //todo : controller.addDevice,
           ),
         ],
       ),
