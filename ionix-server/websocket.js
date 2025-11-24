@@ -73,25 +73,25 @@ console.log("📩 Message from device", data);
                 liveSockets.set(deviceId, ws);
 
                 // Create device if not exists
-                let device = await Device.findOne({ deviceId });
-                if (!device) {
-                    device = new Device({
-                        deviceId,
-                        name: deviceId,
-                        status: "online",
-                        ip: clientIP,
-                        lastSeen: new Date(),
-                    });
-                    await device.save();
-                    log(`🆕 New device registered → ${deviceId}`);
-                } else {
-                    // Mark device online
-                    device.status = "online";
-                    device.ip = clientIP;
-                    device.lastSeen = new Date();
-                    await device.save();
-                    log(`♻ Device reconnected → ${deviceId}`);
-                }
+                // let device = await Device.findOne({ deviceId });
+                // if (!device) {
+                //     device = new Device({
+                //         deviceId,
+                //         name: deviceId,
+                //         status: "online",
+                //         ip: clientIP,
+                //         lastSeen: new Date(),
+                //     });
+                //     await device.save();
+                //     log(`🆕 New device registered → ${deviceId}`);
+                // } else {
+                //     // Mark device online
+                //     device.status = "online";
+                //     device.ip = clientIP;
+                //     device.lastSeen = new Date();
+                //     await device.save();
+                //     log(`♻ Device reconnected → ${deviceId}`);
+                // }
 
                 ws.send(JSON.stringify({ type: "HELLO_ACK", deviceId }));
                 return;
