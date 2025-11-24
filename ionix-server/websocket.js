@@ -60,7 +60,7 @@ module.exports = (server, log = console.log) => {
             } catch (e) {
                 return log("❌ Invalid JSON from device");
             }
-
+console.log("📩 Message from device", data);
             // -------------------------
             // 1️⃣ DEVICE IDENTIFICATION (NO AUTH)
             // Device must first send:
