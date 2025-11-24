@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 
 const RelaySchema = new mongoose.Schema({
-  relay_id: { type: Number, required: true },
+  relay_id: { type: Number },
   name: { type: String },
   state: { type: Boolean, default: false },
   countdown_s: { type: Number, default: 0 },

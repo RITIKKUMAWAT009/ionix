@@ -36,13 +36,14 @@
 // };
 
 // websocket.js
+// websocket.js
 const WebSocket = require("ws");
 const Device = require("./models/device.model");
 
 module.exports = (server, log = console.log) => {
     const wss = new WebSocket.Server({ server, path: "/ws" });
 
-    // deviceId → WebSocket
+    // deviceId → WebSocket connection
     const liveSockets = new Map();
 
     log("📡 WebSocket server started at /ws");
@@ -60,51 +61,45 @@ module.exports = (server, log = console.log) => {
             } catch (e) {
                 return log("❌ Invalid JSON from device");
             }
-console.log("📩 Message from device", data);
-            // -------------------------
-            // 1️⃣ DEVICE IDENTIFICATION (NO AUTH)
-            // Device must first send:
-            // { type: "HELLO", deviceId: "b3projects-relays" }
-            // -------------------------
-            // if (data.type === "HELLO") {
-                const { deviceId } = data;
+
+            console.log("📩 Message from device", data);
+
+            // 1️⃣ HELLO (device identification)
+            if (data.type === "HELLO" || data.unique_id) {
+                const deviceId = data.deviceId || data.unique_id;
 
                 connectedDeviceId = deviceId;
                 liveSockets.set(deviceId, ws);
 
-                // Create device if not exists
-                // let device = await Device.findOne({ deviceId });
-                // if (!device) {
-                //     device = new Device({
-                //         deviceId,
-                //         name: deviceId,
-                //         status: "online",
-                //         ip: clientIP,
-                //         lastSeen: new Date(),
-                //     });
-                //     await device.save();
-                //     log(`🆕 New device registered → ${deviceId}`);
-                // } else {
-                //     // Mark device online
-                //     device.status = "online";
-                //     device.ip = clientIP;
-                //     device.lastSeen = new Date();
-                //     await device.save();
-                //     log(`♻ Device reconnected → ${deviceId}`);
-                // }
+                // Update or register device
+                let device = await Device.findOne({ deviceId });
+                if (!device) {
+                    await Device.create({
+                        deviceId,
+                        name: data.project || deviceId,
+                        status: "online",
+                        ip: clientIP,
+                        lastSeen: new Date(),
+                    });
+                    log(`🆕 New device registered → ${deviceId}`);
+                } else {
+                    await Device.updateOne(
+                        { deviceId },
+                        { status: "online", ip: clientIP, lastSeen: new Date() }
+                    );
+                    log(`♻ Device reconnected → ${deviceId}`);
+                }
 
                 ws.send(JSON.stringify({ type: "HELLO_ACK", deviceId }));
                 return;
-            // }
+            }
 
-            // Block all other messages until HELLO received
+            // Block everything else until HELLO received
             if (!connectedDeviceId) {
                 return ws.send(JSON.stringify({ type: "ERROR", message: "Send HELLO first" }));
             }
 
-            // -------------------------
             // 2️⃣ HEARTBEAT
-            // -------------------------
             if (data.type === "HEARTBEAT") {
                 await Device.updateOne(
                     { deviceId: connectedDeviceId },
@@ -114,41 +109,54 @@ console.log("📩 Message from device", data);
                 return;
             }
 
-            // -------------------------
-            // 3️⃣ RELAY SNAPSHOT UPDATE
-            // Device sends:
-            // { type: "SNAPSHOT", relays: [...] }
-            // -------------------------
-            if (data.type === "SNAPSHOT") {
-                log(`📦 SNAPSHOT received from ${connectedDeviceId}`);
+            // 3️⃣ SYSTEM_STATUS (uptime, wifi strength, relay status)
+            if (data.type === "SYSTEM_STATUS") {
+                log(`🟢 SYSTEM_STATUS from ${connectedDeviceId}`);
 
                 await Device.updateOne(
                     { deviceId: connectedDeviceId },
                     {
-                        relays: data.relays,
                         lastSeen: new Date(),
+                        status: "online",
+                        uptime: data.uptime_s,
+                        wifi_rssi: data.wifi_rssi,
+                        lastCommand: data.last_command,
+                        relays: data.relays,
                     }
                 );
 
                 return;
             }
 
-            // -------------------------
-            // 4️⃣ REUSABLE FUTURE TYPE HANDLER
-            // -------------------------
-            log(`📩 Message from ${connectedDeviceId}:`, data);
+            // 4️⃣ SNAPSHOT (relay list only)
+            if (data.type === "SNAPSHOT") {
+                log(`📦 SNAPSHOT received from ${connectedDeviceId}`);
+
+                await Device.updateOne(
+                    { deviceId: connectedDeviceId },
+                    { relays: data.relays, lastSeen: new Date() }
+                );
+                return;
+            }
+
+            // 5️⃣ Device LOG message
+            if (data.type === "LOG") {
+                log(`📝 LOG from ${connectedDeviceId}: ${data.message}`);
+                return;
+            }
+
+            // Default: unknown type
+            log(`📨 Unknown message type from ${connectedDeviceId}`, data);
         });
 
-        // ---------------------------------------
-        // HANDLE DISCONNECT
-        // ---------------------------------------
+        // 🔌 Device Disconnect
         ws.on("close", async () => {
             if (connectedDeviceId) {
                 liveSockets.delete(connectedDeviceId);
 
                 await Device.updateOne(
                     { deviceId: connectedDeviceId },
-                    { status: "offline" }
+                    { status: "offline", lastSeen: new Date() }
                 );
 
                 log(`❌ Device disconnected → ${connectedDeviceId}`);
@@ -160,13 +168,23 @@ console.log("📩 Message from device", data);
         });
     });
 
-    // Allow backend to send to device
+    // 🟩 Functions exposed to backend APIs
     return {
+        // Send any JSON message to device
         sendToDevice(deviceId, data) {
             const socket = liveSockets.get(deviceId);
             if (!socket) return false;
             socket.send(JSON.stringify(data));
             return true;
         },
+
+        // Request device for real-time status
+        requestStatus(deviceId) {
+            const socket = liveSockets.get(deviceId);
+            if (!socket) return false;
+
+            socket.send(JSON.stringify({ command: "GET_STATUS" }));
+            return true;
+        }
     };
 };
