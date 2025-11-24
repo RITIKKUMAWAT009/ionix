@@ -66,7 +66,7 @@ module.exports = (server, log = console.log) => {
             // Device must first send:
             // { type: "HELLO", deviceId: "b3projects-relays" }
             // -------------------------
-            if (data.type === "HELLO") {
+            // if (data.type === "HELLO") {
                 const { deviceId } = data;
 
                 connectedDeviceId = deviceId;
@@ -95,7 +95,7 @@ module.exports = (server, log = console.log) => {
 
                 ws.send(JSON.stringify({ type: "HELLO_ACK", deviceId }));
                 return;
-            }
+            // }
 
             // Block all other messages until HELLO received
             if (!connectedDeviceId) {
