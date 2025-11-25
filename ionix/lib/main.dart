@@ -24,6 +24,7 @@ class IonixApp extends StatelessWidget {
   const IonixApp({super.key});
 
   @override
+
   Widget build(BuildContext context) {
     final themeService = Get.find<ThemeService>();
     

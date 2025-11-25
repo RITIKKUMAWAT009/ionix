@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ionix/app/modules/home/home_controller.dart';
 import 'profile_controller.dart';
 import '../../data/services/theme_service.dart';
 
@@ -88,9 +89,9 @@ class ProfileView extends GetView<ProfileController> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildStatCard(context, '12', 'Devices'),
-        _buildStatCard(context, '4', 'Rooms'),
-        _buildStatCard(context, '8', 'Scenes'),
+        _buildStatCard(context, Get.find<HomeController>().totalDevices.toString(), 'Devices'),
+        _buildStatCard(context, Get.find<HomeController>().totalRelays.toString(), 'Relays'),
+        _buildStatCard(context, Get.find<HomeController>().scheduleCount.toString(), 'Schedules'),
       ],
     );
   }

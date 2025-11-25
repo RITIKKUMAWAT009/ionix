@@ -213,6 +213,7 @@
 
 
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/models/device_model.dart';
 import '../../data/services/websocket_service.dart';
@@ -338,6 +339,37 @@ class HomeController extends GetxController {
   }
 
 
+Future<void> deleteDevice(String deviceId) async {
+    // Remove device locally
+    final deviceIndex = devices.indexWhere((d) => d.id == deviceId);
+    if (deviceIndex != -1) {
+      devices.removeAt(deviceIndex);
+    }
+
+    // Optionally, send delete command to server
+    // Uncomment when API is ready
+    /*
+    final success = await _api.deleteDevice(deviceId);
+    if (!success) {
+      Get.snackbar(
+        'Error',
+        'Failed to delete device from server',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+    */
+
+   
+     Get.snackbar(
+      'Success',
+      'Device deleted successfully',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.withOpacity(0.1),
+      colorText: Colors.green,
+    );
+
+  }
   // ---------------------------
   // Event handlers
   // ---------------------------
@@ -418,6 +450,7 @@ class HomeController extends GetxController {
 
     // Send command over websocket (server will forward to device)
     _ws.toggleRelay(deviceId: deviceId, relayId: relayId);
+    _ws.requestStatus(deviceId: deviceId);
   }
 
   void requestStatus(String deviceId) {
@@ -451,6 +484,7 @@ class HomeController extends GetxController {
   int get onlineDevices => devices.where((d) => d.isOnline).length;
   int get totalRelays => devices.fold(0, (sum, d) => sum + d.relayCount);
   int get activeRelays => devices.fold(0, (sum, d) => sum + d.activeRelayCount);
+  int get scheduleCount => devices.fold(0, (sum, d) => d.relays.fold(0, (s, r) => s + (r.schedule.hasActiveSchedule  ? 1 : 0)));
 
   @override
   void onClose() {
@@ -476,6 +510,7 @@ void _startStatusPolling() {
   
 
   Future<void> refreshDevices() async {
+    _ws.getDevices();
     // Uncomment when API is ready
     /*
     try {

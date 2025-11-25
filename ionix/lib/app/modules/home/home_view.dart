@@ -15,9 +15,9 @@ class HomeView extends GetView<HomeController> {
         index: controller.selectedBottomIndex.value,
         children: const [
           _HomeContent(),
-          Center(child: Text('Scenes', style: TextStyle(fontSize: 20))),
-          Center(child: Text('Insights', style: TextStyle(fontSize: 20))),
-          Center(child: Text('Messages', style: TextStyle(fontSize: 20))),
+        //  Center(child: Text('Scenes', style: TextStyle(fontSize: 20))),
+        //  Center(child: Text('Insights', style: TextStyle(fontSize: 20))),
+        //  Center(child: Text('Messages', style: TextStyle(fontSize: 20))),
           ProfileView(),
         ],
       ),
@@ -44,10 +44,10 @@ class HomeView extends GetView<HomeController> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(context, Icons.home_rounded, 'Home', 0),
-              _buildNavItem(context, Icons.lightbulb_outline_rounded, 'Scene', 1),
-              _buildNavItem(context, Icons.insights_rounded, 'Insight', 2),
-              _buildNavItem(context, Icons.chat_bubble_outline_rounded, 'Message', 3),
-              _buildNavItem(context, Icons.person_outline_rounded, 'Profile', 4),
+            //   _buildNavItem(context, Icons.lightbulb_outline_rounded, 'Scene', 1),
+            //   _buildNavItem(context, Icons.insights_rounded, 'Insight', 2),
+            //  _buildNavItem(context, Icons.chat_bubble_outline_rounded, 'Message', 3),
+              _buildNavItem(context, Icons.person_outline_rounded, 'Profile', 1),
             ],
           )),
         ),
@@ -95,9 +95,9 @@ class _HomeContent extends GetView<HomeController> {
       appBar: AppBar(
         title: const Row(
           children: [
-            Text('My Home'),
+            Text('Ionix', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(width: 4),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+            //Icon(Icons.keyboard_arrow_down_rounded, size: 20),
           ],
         ),
         actions: [
@@ -125,29 +125,35 @@ class _HomeContent extends GetView<HomeController> {
               final devices = controller.filteredDevices;
               
               if (devices.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.devices_other_rounded,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                return RefreshIndicator(
+                  onRefresh: controller.refreshDevices,
+                  child: ListView(
+                    children:[ Center(
+                      heightFactor: 5,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.devices_other_rounded,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No devices found',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add a device to get started',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No devices found',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Add a device to get started',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+         ] ),
                 );
               }
 
@@ -246,7 +252,7 @@ class _HomeContent extends GetView<HomeController> {
           _buildStatItem(
             context,
             Icons.schedule_rounded,
-            '2',
+            '${controller.scheduleCount}',
             'Scheduled',
           ),
         ],
@@ -340,6 +346,12 @@ class _DeviceCard extends GetView<HomeController> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+               Text(
+                device.id,
+                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
               Text(
                 device.ipAddress,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -349,7 +361,16 @@ class _DeviceCard extends GetView<HomeController> {
             ],
           ),
         ),
+        const SizedBox(width: 8),
         _buildOnlineIndicator(context),
+        //Delete button
+        IconButton(
+          icon: Icon(Icons.delete_forever_rounded,
+              color: Theme.of(context).colorScheme.error),  
+          onPressed:(){
+            controller.deleteDevice(device.id);
+          },
+        ),
       ],
     );
   }
@@ -435,12 +456,100 @@ class _DeviceCard extends GetView<HomeController> {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: device.relays.take(8).map((relay) {
+      children: device.relays.take(10).map((relay) {
         return _RelayButton(device: device, relay: relay);
       }).toList(),
     );
   }
 }
+
+// class _RelayButton extends GetView<HomeController> {
+//   final Device device;
+//   final Relay relay;
+
+//   const _RelayButton({
+//     required this.device,
+//     required this.relay,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Obx(() {
+//       // Find current state
+//       final currentDevice = controller.devices.firstWhereOrNull((d) => d.id == device.id);
+//       final currentRelay = currentDevice?.relays.firstWhereOrNull((r) => r.relayId == relay.relayId);
+//       final isEnabled = currentRelay?.state ?? false;
+
+//       return InkWell(
+//         onTap: () => controller.toggleRelay(device.id, relay.relayId),
+//         borderRadius: BorderRadius.circular(12),
+//         child: Container(
+//           width: (Get.width - 64) / 6,
+//           padding: const EdgeInsets.symmetric(vertical: 12),
+//           decoration: BoxDecoration(
+//             color: isEnabled
+//                 ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+//                 : Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+//             borderRadius: BorderRadius.circular(12),
+//             border: Border.all(
+//               color: isEnabled
+//                   ? Theme.of(context).colorScheme.primary
+//                   : Colors.transparent,
+//               width: 1.5,
+//             ),
+//           ),
+//           child: Column(
+//             children: [
+//               Container(
+//                 width: 40,
+//                 height: 40,
+//                 decoration: BoxDecoration(
+//                   color: isEnabled
+//                       ? Theme.of(context).colorScheme.primary
+//                       : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+//                   borderRadius: BorderRadius.circular(20),
+//                 ),
+//                 child: Center(
+//                   child: Container(
+//                     width: 20,
+//                     height: 20,
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.circular(10),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(height: 8),
+//               Padding(
+//                 padding: const EdgeInsets.symmetric(horizontal: 4),
+//                 child: Text(
+//                   relay.name,
+//                   textAlign: TextAlign.center,
+//                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
+//                     fontWeight: FontWeight.w500,
+//                     fontSize: 10,
+//                   ),
+//                   maxLines: 2,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//               ),
+//               if (relay.hasActiveSchedule) ...[
+//                 const SizedBox(height: 4),
+//                 Icon(
+//                   Icons.schedule,
+//                   size: 12,
+//                   color: Theme.of(context).colorScheme.primary,
+//                 ),
+//               ],
+//             ],
+//           ),
+//         ),
+//       );
+//     });
+//   }
+// }
+
 
 class _RelayButton extends GetView<HomeController> {
   final Device device;
@@ -461,10 +570,20 @@ class _RelayButton extends GetView<HomeController> {
 
       return InkWell(
         onTap: () => controller.toggleRelay(device.id, relay.relayId),
+        onLongPress: () {
+          // Navigate to schedule screen
+          Get.toNamed(
+            '/schedule',
+            arguments: {
+              'device': device,
+              'relay': relay,
+            },
+          );
+        },
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          width: (Get.width - 64) / 4,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          width: (Get.width - 64) / 6,
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isEnabled
                 ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
@@ -473,7 +592,7 @@ class _RelayButton extends GetView<HomeController> {
             border: Border.all(
               color: isEnabled
                   ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
+     :Colors.red.withOpacity(0.8),
               width: 1.5,
             ),
           ),
@@ -485,7 +604,7 @@ class _RelayButton extends GetView<HomeController> {
                 decoration: BoxDecoration(
                   color: isEnabled
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      :Colors.red.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(
